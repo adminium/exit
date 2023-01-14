@@ -10,7 +10,7 @@ import (
 
 var (
 	signals  = make(chan os.Signal, 1)
-	cleanups []Cleanup
+	cleanFns []func() error
 	lock     = sync.Mutex{}
 	pid      int
 )
@@ -28,12 +28,10 @@ func init() {
 	)
 }
 
-type Cleanup func() error
-
-func AddCleanup(cleanup Cleanup) {
+func Clean(fn func() error) {
 	lock.Lock()
 	defer lock.Unlock()
-	cleanups = append(cleanups, cleanup)
+	cleanFns = append(cleanFns, fn)
 }
 
 func Pid() int {
@@ -96,7 +94,7 @@ func Wait() {
 func execHandles() (err error) {
 	lock.Lock()
 	defer lock.Unlock()
-	for _, handler := range cleanups {
+	for _, handler := range cleanFns {
 		err = handler()
 		if err != nil {
 			return
