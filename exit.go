@@ -9,10 +9,10 @@ import (
 )
 
 var (
-	signals = make(chan os.Signal, 1)
-	cancels []Cancel
-	lock    = sync.Mutex{}
-	pid     int
+	signals  = make(chan os.Signal, 1)
+	cleanups []Cleanup
+	lock     = sync.Mutex{}
+	pid      int
 )
 
 var log = logging.Logger("exit")
@@ -28,12 +28,12 @@ func init() {
 	)
 }
 
-type Cancel func() error
+type Cleanup func() error
 
-func AddCancel(handler Cancel) {
+func AddCleanup(cleanup Cleanup) {
 	lock.Lock()
 	defer lock.Unlock()
-	cancels = append(cancels, handler)
+	cleanups = append(cleanups, cleanup)
 }
 
 func Pid() int {
@@ -96,7 +96,7 @@ func Wait() {
 func execHandles() (err error) {
 	lock.Lock()
 	defer lock.Unlock()
-	for _, handler := range cancels {
+	for _, handler := range cleanups {
 		err = handler()
 		if err != nil {
 			return
