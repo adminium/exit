@@ -1,11 +1,12 @@
 package exit
 
 import (
-	"github.com/gozelle/logging"
 	"os"
 	"os/signal"
 	"sync"
 	"syscall"
+
+	"github.com/gozelle/logging"
 )
 
 var (
@@ -28,7 +29,16 @@ func init() {
 	)
 }
 
-func Clean(fn func() error) {
+func Clean(fn func()) {
+	lock.Lock()
+	defer lock.Unlock()
+	cleanFns = append(cleanFns, func() error {
+		fn()
+		return nil
+	})
+}
+
+func MustClean(fn func() error) {
 	lock.Lock()
 	defer lock.Unlock()
 	cleanFns = append(cleanFns, fn)
