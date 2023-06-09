@@ -1,12 +1,11 @@
 package exit
 
 import (
+	"github.com/gozelle/logging"
 	"os"
 	"os/signal"
 	"sync"
 	"syscall"
-
-	"github.com/gozelle/logging"
 )
 
 var (
@@ -38,12 +37,6 @@ func Clean(fn func()) {
 	})
 }
 
-func MustClean(fn func() error) {
-	lock.Lock()
-	defer lock.Unlock()
-	cleanFns = append(cleanFns, fn)
-}
-
 func Pid() int {
 	return pid
 }
@@ -52,36 +45,26 @@ func Exit() {
 	signals <- os.Interrupt
 }
 
-func Done() {
-	err := execHandles()
-	if err != nil {
-		log.Errorf("pid: %d exit failed: %s", pid, err)
-	} else {
-		log.Infof("pid: %d exit done", pid)
-		os.Exit(0)
-	}
-}
-
 func Signal() <-chan os.Signal {
-	exit := make(chan os.Signal, 1)
+	c := make(chan os.Signal, 1)
 	go func() {
 		for {
 			select {
 			case s := <-signals:
-				log.Infof("pid: %d received signal '%s' exiting...", pid, s)
-				err := execHandles()
+				log.Infof("pid: %d received signal: %s, exiting...", pid, s)
+				err := clean()
 				if err != nil {
 					log.Errorf("pid: %d exit failed: %s", pid, err)
 				} else {
-					log.Infof("pid: % exited", pid)
+					log.Infof("pid: %d exited", pid)
 					close(signals)
-					exit <- s
+					c <- s
 					return
 				}
 			}
 		}
 	}()
-	return exit
+	return c
 }
 
 func Wait() {
@@ -89,7 +72,7 @@ func Wait() {
 		select {
 		case <-signals:
 			log.Infof("pid: %d exiting...", pid)
-			err := execHandles()
+			err := clean()
 			if err != nil {
 				log.Errorf("pid: %d exit failed : %s", pid, err)
 			} else {
@@ -101,7 +84,7 @@ func Wait() {
 	}
 }
 
-func execHandles() (err error) {
+func clean() (err error) {
 	lock.Lock()
 	defer lock.Unlock()
 	for _, handler := range cleanFns {

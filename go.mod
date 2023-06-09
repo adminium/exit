@@ -2,7 +2,7 @@ module github.com/gozelle/exit
 
 go 1.18
 
-require github.com/gozelle/logging v0.0.0-20230111080605-40f7ef681d4a
+require github.com/gozelle/logging v0.0.0-20230111081457-6f16f4dd5a46
 
 require (
 	github.com/gozelle/atomic v1.10.10 // indirect
