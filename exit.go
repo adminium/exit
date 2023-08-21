@@ -1,7 +1,7 @@
 package exit
 
 import (
-	"github.com/gozelle/logging"
+	"github.com/gozelle/logger"
 	"os"
 	"os/signal"
 	"sync"
@@ -15,73 +15,15 @@ var (
 	pid      int
 )
 
-var log = logging.Logger("exit")
+var log = logger.NewLogger("exit")
 
 func init() {
 	pid = os.Getpid()
-	log.Infof("pid: %d start", pid)
-	signal.Notify(signals,
-		os.Interrupt,
-		os.Kill,
-		syscall.SIGINT,
-		syscall.SIGTERM,
-	)
+	signal.Notify(signals, os.Interrupt, os.Kill, syscall.SIGINT, syscall.SIGTERM)
 }
 
-func Clean(fn func()) {
-	lock.Lock()
-	defer lock.Unlock()
-	cleanFns = append(cleanFns, func() error {
-		fn()
-		return nil
-	})
-}
-
-func Pid() int {
+func PID() int {
 	return pid
-}
-
-func Exit() {
-	signals <- os.Interrupt
-}
-
-func Signal() <-chan os.Signal {
-	c := make(chan os.Signal, 1)
-	go func() {
-		for {
-			select {
-			case s := <-signals:
-				log.Infof("pid: %d received signal: %s, exiting...", pid, s)
-				err := clean()
-				if err != nil {
-					log.Errorf("pid: %d exit failed: %s", pid, err)
-				} else {
-					log.Infof("pid: %d exited", pid)
-					close(signals)
-					c <- s
-					return
-				}
-			}
-		}
-	}()
-	return c
-}
-
-func Wait() {
-	for {
-		select {
-		case <-signals:
-			log.Infof("pid: %d exiting...", pid)
-			err := clean()
-			if err != nil {
-				log.Errorf("pid: %d exit failed : %s", pid, err)
-			} else {
-				log.Infof("pid: %d exited", pid)
-				close(signals)
-				os.Exit(0)
-			}
-		}
-	}
 }
 
 func clean() (err error) {
@@ -94,4 +36,44 @@ func clean() (err error) {
 		}
 	}
 	return
+}
+
+func Clean(fn func()) {
+	lock.Lock()
+	defer lock.Unlock()
+	cleanFns = append(cleanFns, func() error {
+		fn()
+		return nil
+	})
+}
+
+func Handle(fn func() error) {
+	lock.Lock()
+	defer lock.Unlock()
+	cleanFns = append(cleanFns, fn)
+}
+
+func Pid() int {
+	return pid
+}
+
+func Exit() {
+	signals <- os.Interrupt
+}
+
+func Wait() {
+	for {
+		select {
+		case <-signals:
+			log.Infof("exiting...")
+			err := clean()
+			if err != nil {
+				log.Errorf("exit failed : %s", err)
+			} else {
+				log.Infof("exit success")
+				close(signals)
+				os.Exit(0)
+			}
+		}
+	}
 }
