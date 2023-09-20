@@ -61,15 +61,39 @@ func Exit() {
 	signals <- os.Interrupt
 }
 
+func exit() (ok bool) {
+	log.Infof("exiting...")
+	err := clean()
+	if err != nil {
+		log.Errorf("exit failed : %s", err)
+		return
+	}
+	ok = true
+	return
+}
+
+func Signal() chan struct{} {
+	s := make(chan struct{})
+	go func() {
+		for {
+			select {
+			case <-signals:
+				if exit() {
+					s <- struct{}{}
+					log.Infof("trigger exit signal")
+					return
+				}
+			}
+		}
+	}()
+	return s
+}
+
 func Wait() {
 	for {
 		select {
 		case <-signals:
-			log.Infof("exiting...")
-			err := clean()
-			if err != nil {
-				log.Errorf("exit failed : %s", err)
-			} else {
+			if exit() {
 				log.Infof("exit success")
 				close(signals)
 				os.Exit(0)
