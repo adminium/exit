@@ -1,11 +1,12 @@
 package exit
 
 import (
-	"github.com/gozelle/logger"
 	"os"
 	"os/signal"
 	"sync"
 	"syscall"
+
+	"github.com/adminium/logger"
 )
 
 var (

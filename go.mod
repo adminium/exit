@@ -1,14 +1,14 @@
-module github.com/gozelle/exit
+module github.com/adminium/exit
 
 go 1.18
 
-require github.com/gozelle/logging v0.0.0-20230111081457-6f16f4dd5a46
+require github.com/adminium/logger v1.5.0
 
 require (
-	github.com/gozelle/atomic v1.10.10 // indirect
-	github.com/gozelle/isatty v0.0.17 // indirect
-	github.com/gozelle/logger v0.0.0-20230808060726-844dbcc32ecf // indirect
-	github.com/gozelle/multierr v1.9.10 // indirect
-	github.com/gozelle/zap v1.24.0 // indirect
+	github.com/mattn/go-isatty v0.0.14 // indirect
+	go.uber.org/atomic v1.7.0 // indirect
+	go.uber.org/multierr v1.6.0 // indirect
+	go.uber.org/zap v1.19.1 // indirect
 	golang.org/x/sys v0.0.0-20220811171246-fbc7d0a398ab // indirect
+	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
