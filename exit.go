@@ -1,12 +1,11 @@
 package exit
 
 import (
+	"github.com/adminium/logger"
 	"os"
 	"os/signal"
 	"sync"
 	"syscall"
-
-	"github.com/adminium/logger"
 )
 
 var (
@@ -20,7 +19,13 @@ var log = logger.NewLogger("exit")
 
 func init() {
 	pid = os.Getpid()
-	signal.Notify(signals, os.Interrupt, os.Kill, syscall.SIGINT, syscall.SIGTERM)
+	signal.Notify(
+		signals,
+		os.Interrupt,
+		os.Kill,
+		syscall.SIGINT,
+		syscall.SIGTERM,
+	)
 }
 
 func PID() int {
